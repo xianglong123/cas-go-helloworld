@@ -1,8 +1,12 @@
 package main
 
 import (
+	"database/sql"
+	_ "database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -34,6 +38,44 @@ func main2() {
 	if err := r.Run(":9000"); err != nil {
 		fmt.Printf("startup service failed, err:%v\n\n", err)
 	}
+}
+
+func testDB() {
+
+	var (
+		id   int
+		name string
+	)
+
+	db, err := sql.Open("mysql",
+		"root:12345678@tcp(127.0.0.1:3306)/cas")
+	if err != nil {
+		log.Fatal(err)
+	}
+	/**
+	我们使用db.Query()将查询发送到数据库。我们像往常一样检查错误。
+	我们用defer内置函数推迟了rows.Close()的执行。这个非常重要。
+	我们用rows.Next()遍历了数据行。
+	我们用rows.Scan()读取每行中的列变量。
+	我们完成遍历行之后检查错误。
+	*/
+	err = db.Ping()
+	rows, err := db.Query("select id, gs_name from goods where id = ?", 101)
+	defer rows.Close()
+
+	for rows.Next() {
+		err := rows.Scan(&id, &name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(id, name)
+	}
+
+	if err != nil {
+		// do something here
+	}
+
+	defer db.Close()
 }
 
 func helloHandler(c *gin.Context) {
